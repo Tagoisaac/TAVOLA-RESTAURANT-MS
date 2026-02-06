@@ -40,6 +40,7 @@ class Ingredient(BaseModel):
     unit = Column(String)  # kg, g, l, ml, pcs, etc.
     current_stock = Column(Float, default=0)
     min_stock_level = Column(Float, default=0)
+    reorder_level = Column(Float, default=0)
     
     # Relationships
     menu_items = relationship("MenuItemIngredient", back_populates="ingredient")

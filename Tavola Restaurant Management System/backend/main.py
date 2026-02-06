@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.db.session import engine
 from app.db import models
+from app.api.v1 import api_router
 
 # Try to create all database tables, but don't fail if database is unavailable
 try:
@@ -31,6 +31,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include API routers
+app.include_router(api_router)
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():
@@ -49,17 +52,26 @@ async def root():
         "message": "Welcome to Tavola Restaurant Management System API",
         "version": settings.VERSION,
         "docs": f"{settings.API_V1_STR}/docs",
+        "endpoints": {
+            "auth": f"{settings.API_V1_STR}/auth",
+            "admin": f"{settings.API_V1_STR}/admin",
+            "restaurant": f"{settings.API_V1_STR}/restaurant",
+            "cashier": f"{settings.API_V1_STR}/cashier",
+            "inventory": f"{settings.API_V1_STR}/inventory",
+        }
     }
 
-# API v1 routes
+# API v1 root
 @app.get(f"{settings.API_V1_STR}/")
 async def api_v1_root():
     return {
-        "message": "API v1",
+        "message": "API v1 - Tavola Restaurant Management System",
         "endpoints": {
-            "health": "/health",
-            "docs": "/docs",
-            "redoc": "/redoc",
+            "authentication": "/auth/login",
+            "admin": "/admin/users",
+            "restaurant": "/restaurant/orders",
+            "cashier": "/cashier/payments",
+            "inventory": "/inventory/items",
         },
     }
 
