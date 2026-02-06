@@ -21,6 +21,10 @@ function App() {
     setIsAuthenticated(true);
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
+
   if (isLoading) {
     return <div className="loading-screen">Loading...</div>;
   }
@@ -34,7 +38,7 @@ function App() {
         />
         <Route 
           path="/dashboard" 
-          element={isAuthenticated ? <Dashboard /> : <Navigate to="/" />} 
+          element={isAuthenticated ? <Dashboard onLogout={handleLogout} /> : <Navigate to="/" />} 
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
