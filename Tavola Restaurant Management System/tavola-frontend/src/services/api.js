@@ -13,19 +13,6 @@ class APIService {
   }
 
   // Auth endpoints
-  async register(username, email, password, full_name) {
-    const response = await fetch(`${this.baseURL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password, full_name })
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Registration failed');
-    }
-    return await response.json();
-  }
-
   async login(username, password) {
     const response = await fetch(`${this.baseURL}/auth/login`, {
       method: 'POST',

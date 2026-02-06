@@ -22,4 +22,10 @@ settings = Settings()
 
 # Update database URL if not set
 if not settings.DATABASE_URI:
-    settings.DATABASE_URI = f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_SERVER}/{settings.POSTGRES_DB}"
+    # Use SQLite for development, PostgreSQL for production
+    import os
+    if os.getenv("USE_POSTGRES"):
+        settings.DATABASE_URI = f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_SERVER}/{settings.POSTGRES_DB}"
+    else:
+        # Use SQLite for development
+        settings.DATABASE_URI = "sqlite:///./tavola.db"
