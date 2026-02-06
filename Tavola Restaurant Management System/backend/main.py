@@ -14,6 +14,46 @@ except Exception as e:
     print(f"Warning: Could not initialize database: {e}")
     print("Running in development mode without database")
 
+# Seed default permissions and ensure admin role has permissions
+try:
+    from app.db.session import SessionLocal
+    db = SessionLocal()
+    # Default permissions
+    default_perms = [
+        ("view_users", "View users"),
+        ("manage_users", "Create/update/delete users"),
+        ("view_roles", "View roles"),
+        ("manage_roles", "Create/update/delete roles"),
+        ("view_permissions", "View permissions"),
+        ("manage_permissions", "Create/delete permissions"),
+    ]
+    perms = []
+    for name, desc in default_perms:
+        p = db.query(models.User.__table__.metadata.tables['permission'].c if False else models.Permission).filter(models.Permission.name == name).first()
+        if not p:
+            p = models.Permission(name=name, description=desc)
+            db.add(p)
+            db.commit()
+            db.refresh(p)
+        perms.append(p)
+
+    # Ensure admin role exists and has all permissions
+    admin_role = db.query(models.Role).filter(models.Role.name == 'admin').first()
+    if not admin_role:
+        admin_role = models.Role(name='admin', description='Administrator')
+        db.add(admin_role)
+        db.commit()
+        db.refresh(admin_role)
+
+    # Attach permissions to admin role
+    for p in perms:
+        if p not in admin_role.permissions:
+            admin_role.permissions.append(p)
+    db.commit()
+    db.close()
+except Exception as e:
+    print(f"Warning: Failed to seed permissions: {e}")
+
 # Initialize FastAPI application
 app = FastAPI(
     title=settings.PROJECT_NAME,

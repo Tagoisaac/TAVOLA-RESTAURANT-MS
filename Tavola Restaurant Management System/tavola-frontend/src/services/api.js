@@ -45,6 +45,44 @@ class APIService {
     return await response.json();
   }
 
+  // Permission endpoints
+  async getPermissions() {
+    const response = await fetch(`${this.baseURL}/admin/permissions`, {
+      method: 'GET',
+      headers: this.getAuthHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to fetch permissions');
+    return await response.json();
+  }
+
+  async createPermission(name, description) {
+    const response = await fetch(`${this.baseURL}/admin/permissions`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ name, description })
+    });
+    if (!response.ok) throw new Error('Failed to create permission');
+    return await response.json();
+  }
+
+  async deletePermission(permissionId) {
+    const response = await fetch(`${this.baseURL}/admin/permissions/${permissionId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to delete permission');
+    return await response.json();
+  }
+
+  async getCurrentUser() {
+    const response = await fetch(`${this.baseURL}/auth/me`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch current user');
+    return await response.json();
+  }
+
   // Menu endpoints
   async getMenuCategories() {
     const response = await fetch(`${this.baseURL}/restaurant/categories`, {

@@ -1,19 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import APIService from '../services/api';
 import './Dashboard.css';
+import CreateUserForm from './CreateUserForm';
+import CreatePermissionInline from './CreatePermissionInline';
 
 const Dashboard = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [users, setUsers] = useState([]);
+  const [permissions, setPermissions] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [canManageUsers, setCanManageUsers] = useState(false);
+  const [canManagePermissions, setCanManagePermissions] = useState(false);
 
   useEffect(() => {
-    fetchData(activeTab);
+    // fetch current user and tab data
+    const init = async () => {
+      try {
+        const me = await APIService.getCurrentUser();
+        setIsAdmin(me.role && me.role.name === 'admin');
+        const permNames = ((me.role && me.role.permissions) || []).map(p => p.name);
+        setCanManageUsers(permNames.includes('manage_users') || permNames.includes('manage_roles'));
+        setCanManagePermissions(permNames.includes('manage_permissions'));
+      } catch (e) {
+        // ignore if not authenticated
+      }
+      fetchData(activeTab);
+    };
+    init();
   }, [activeTab]);
 
   const fetchData = async (tab) => {
@@ -29,6 +48,12 @@ const Dashboard = ({ onLogout }) => {
       } else if (tab === 'users') {
         const data = await APIService.getUsers();
         setUsers(data);
+        try {
+          const perms = await APIService.getPermissions();
+          setPermissions(perms);
+        } catch (e) {
+          // ignore permission fetch errors
+        }
       } else if (tab === 'inventory') {
         const data = await APIService.getInventoryItems();
         const lowData = await APIService.getLowStockItems();
@@ -144,6 +169,12 @@ const Dashboard = ({ onLogout }) => {
           {!isLoading && activeTab === 'users' && (
             <div className="tab-content">
               <h2>Users</h2>
+              {canManageUsers && (
+                <div className="create-user-box">
+                  <h3>Create User</h3>
+                  <CreateUserForm onCreated={(u) => setUsers(prev => [u, ...prev])} permissions={permissions} />
+                </div>
+              )}
               {users.length === 0 ? (
                 <p>No users</p>
               ) : (
@@ -168,6 +199,34 @@ const Dashboard = ({ onLogout }) => {
                   </tbody>
                 </table>
               )}
+
+              <div style={{ marginTop: '20px' }}>
+                <h3>Permissions</h3>
+                {canManagePermissions && (
+                  <CreatePermissionInline onCreated={(p) => setPermissions(prev => [p, ...prev])} />
+                )}
+                {permissions.length === 0 ? (
+                  <p>No permissions defined</p>
+                ) : (
+                  <ul>
+                    {permissions.map(p => (
+                      <li key={p.id} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}> 
+                        <div style={{ flex: 1 }}><strong>{p.name}</strong> — {p.description}</div>
+                        {canManagePermissions && (
+                          <button onClick={async () => {
+                            try {
+                              await APIService.deletePermission(p.id);
+                              setPermissions(prev => prev.filter(x => x.id !== p.id));
+                            } catch (e) {
+                              alert('Failed to delete permission');
+                            }
+                          }}>Delete</button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
 

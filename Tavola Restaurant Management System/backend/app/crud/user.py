@@ -16,11 +16,26 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(User).offset(skip).limit(limit).all()
 
 def create_user(db: Session, user: UserCreate):
+    # Determine role: use provided role_id or fallback to a default role named 'user'
+    role_id = None
+    if getattr(user, 'role_id', None):
+        role_id = user.role_id
+    else:
+        default_role = db.query(Role).filter(Role.name == 'user').first()
+        if not default_role:
+            # create a basic 'user' role if it doesn't exist
+            default_role = Role(name='user', description='Default user role')
+            db.add(default_role)
+            db.commit()
+            db.refresh(default_role)
+        role_id = default_role.id
+
     db_user = User(
         username=user.username,
         email=user.email,
         full_name=user.full_name,
         hashed_password=get_password_hash(user.password),
+        role_id=role_id,
     )
     db.add(db_user)
     db.commit()
@@ -97,7 +112,7 @@ def get_permission(db: Session, permission_id: int):
 
 def create_permission(db: Session, permission: PermissionCreate):
     db_permission = Permission(
-        code=permission.code,
+        name=permission.name,
         description=permission.description,
     )
     db.add(db_permission)

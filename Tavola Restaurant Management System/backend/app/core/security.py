@@ -65,3 +65,17 @@ def has_permission(user, required_permission: str) -> bool:
     if not user.role:
         return False
     return required_permission in [p.name for p in user.role.permissions]
+
+
+def require_permission(permission_name: str):
+    from fastapi import Depends, HTTPException, status
+
+    def _dependency(current_user=Depends(get_current_user)):
+        if not has_permission(current_user, permission_name):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permission '{permission_name}' required",
+            )
+        return True
+
+    return _dependency
